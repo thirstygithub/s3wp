@@ -184,6 +184,33 @@
       return Object.prototype.hasOwnProperty.call(this.manifest, base) ? base : null;
     },
 
+    // jsDelivr answers 403 on the first request for a file it has not cached yet
+    // (it is still pulling it from GitHub), and can rate-limit under the burst of
+    // parallel part fetches this shim makes. Without retries a single transient
+    // 403 aborts the whole assembly, so retry those and any 5xx with backoff.
+    async _fetchPart(url, label, attempts = 6) {
+      let last = null;
+      for (let attempt = 0; attempt < attempts; attempt++) {
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, 400 * attempt));
+        }
+        let response = null;
+        try {
+          response = await fetch(url, { cache: 'force-cache' });
+        } catch (error) {
+          last = new Error(`network error (${error.message})`);
+          continue;
+        }
+        if (response.ok) return response;
+        last = new Error(`HTTP ${response.status}`);
+        // 403/429/5xx are worth another go; a 404 will never succeed.
+        const retryable = response.status === 403 || response.status === 429
+          || response.status >= 500;
+        if (!retryable) return response;
+      }
+      throw last || new Error('unknown failure');
+    },
+
     async _blobFor(name) {
       if (this.blobs.has(name)) return this.blobs.get(name);
       if (this.assembling.has(name)) return this.assembling.get(name);
@@ -195,9 +222,9 @@
           const url = `${this.cdnBase}/${part}`;
           let response;
           try {
-            response = await fetch(url, { cache: 'force-cache' });
+            response = await this._fetchPart(url, part);
           } catch (error) {
-            throw new Error(`${part}: network error (${error.message})`);
+            throw new Error(`${part}: ${error.message}`);
           }
           if (!response.ok) throw new Error(`${part}: HTTP ${response.status}`);
 
