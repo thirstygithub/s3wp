@@ -3,8 +3,6 @@ import * as net from './net.js?v=9798389b2cfa';
 import { createFrontend } from './frontend.js?v=9798389b2cfa';
 import { installTouchControls, touchPad } from './touch.js?v=9798389b2cfa';
 
-// `?v=<build>` that the release build stamps on this script's URL; empty in
-// development.
 const BUILD = new URL(import.meta.url).search;
 
 const $ = (id) => document.getElementById(id);
@@ -15,10 +13,6 @@ const loading = $('loading');
 const fill = $('load-fill');
 const loadLabel = $('load-label');
 
-// The loading screen stays up from the moment Play is pressed until the engine
-// reports a frame drawn, so the wait never looks like a black page.
-// Once the game is on screen the engine shows its own loading screen (Skate
-// 3's, with Coach Frank's tips) for worlds it loads; the page's card stays down.
 const gameShown = () => document.body.classList.contains('in-game');
 
 function showStage(label) {
@@ -44,10 +38,6 @@ function fail(message, heading) {
   if (frontend) frontend.fail(message, heading);
 }
 
-// The engine resizes its canvas to the window as soon as it starts presenting
-// frames, so that doubles as "the game is up" if the engine's own ready() never
-// arrives — and any input then dismisses the screen, so a stuck overlay can
-// never make the game's menus unclickable.
 const engineRunning = () => {
   const canvas = $('skate-canvas');
   return canvas.width > 320 && canvas.height > 240;
@@ -55,7 +45,6 @@ const engineRunning = () => {
 
 let watchdog = 0;
 
-// Tips cycle on the loading screen, as they do between skate. 3's loads.
 const TIPS = [
   'Pull the right stick back, then flick it forward to ollie. Flick it the other way for a nollie.',
   'Flick the right stick off to a side on the way up to kickflip or heelflip.',
@@ -110,12 +99,6 @@ const dismissLoading = () => { if (engineRunning()) revealGame(); };
 window.addEventListener('keydown', dismissLoading, true);
 window.addEventListener('pointerdown', dismissLoading, true);
 
-// A trap inside the engine escapes the wasm call it happened in, so nothing in
-// this file gets to hear about it and the loading screen would sit there for
-// ever. Surface it instead, while the load is still what the screen is for.
-// A Rust panic is printed through console.error (console_error_panic_hook) and
-// only then traps, so the trap that reaches the error event says "unreachable"
-// whatever went wrong. Keep the panic text so the real cause is what gets shown.
 let panicText = '';
 const consoleError = console.error.bind(console);
 console.error = (...args) => {
@@ -128,8 +111,7 @@ function engineFailure(event) {
   const message = (event && (event.message || (event.reason && event.reason.message))) || '';
   if (!message || loading.hidden) return;
   let cause = '';
-  // No GPU at all: almost always the browser running without hardware
-  // acceleration (the setting is on by default but often switched off).
+
   if (/Unable to find a GPU/i.test(panicText || message)) {
     fail('Your browser did not give the game a GPU. Turn on hardware acceleration, then fully restart the browser and reload this page.\n\n' +
       '  • Chrome / Brave / Edge: Settings > System > "Use graphics acceleration when available" (Brave: "Use hardware acceleration when available"), then Relaunch.\n' +
@@ -142,15 +124,12 @@ function engineFailure(event) {
   if (/CreateSurfaceError|FailedToCreateSurface|requestAdapter|No suitable (GPU )?adapter/i.test(panicText)) {
     cause = `\n\nThe browser would not give the engine a WebGPU canvas. ${webgpuProblem() || 'Check that hardware acceleration is on and the browser supports WebGPU.'}`;
   } else if (!panicText && /unreachable|out of memory/i.test(message)) {
-    // An allocation failure aborts with a bare trap and no panic text.
+
     cause = '\n\nThis is usually the engine running out of WebAssembly memory (4 GB at most) while building a large map.';
   }
   fail(`The engine stopped while loading. Reload and try again.${cause}\n\n${panicText || message}`);
 }
 
-// Browsers expose WebGPU only to secure contexts: https, or localhost on the
-// machine itself. Opening the server by its LAN address over plain http hides
-// navigator.gpu even in a browser that supports it.
 function webgpuProblem() {
   if (!window.isSecureContext) {
     return `WebGPU only works over https or on localhost, and this page was opened as ${location.origin}. ` +
@@ -165,8 +144,6 @@ function webgpuProblem() {
 window.addEventListener('error', engineFailure);
 window.addEventListener('unhandledrejection', engineFailure);
 
-// Keyboard-as-controller (slot 0 when no gamepad is connected). Values are the
-// raw XInput integers: buttons bitmask, LT, RT, LX, LY, RX, RY (Y up positive).
 const KEY_BUTTONS = {
   Space: 0x1000, KeyE: 0x2000, KeyQ: 0x4000, KeyR: 0x8000, KeyZ: 0x0100, KeyX: 0x0200,
   Escape: 0x0010, Tab: 0x0020, KeyV: 0x0040, KeyB: 0x0080,
@@ -184,33 +161,28 @@ window.addEventListener('keydown', (event) => {
 });
 window.addEventListener('keyup', (event) => held.delete(event.code));
 window.addEventListener('blur', () => held.clear());
-// Trackpad Mode (pause menu > PLAYER): pointer movement is the right stick.
-// Movement pushes a virtual stick that springs back to centre when the pointer
-// stops, so a quick down-then-up stroke reads as the pull-back-and-flick the
-// game's Flick It gestures expect. The level is the sensitivity (stick per
-// pixel); the engine sends it, and whether play has the input, through
-// skateHost.setTrackpad.
+
 const TRACKPAD_GAIN = [0, 1 / 90, 1 / 55, 1 / 32];
 const TRACKPAD_RETURN_MS = 75;
 const trackpad = { level: 0, playing: false, x: 0, y: 0, at: performance.now() };
 function setTrackpad(level, playing) {
   trackpad.level = Math.max(0, Math.min(3, level | 0));
   trackpad.playing = Boolean(playing);
-  // The Discord button shows in game only while paused.
+
   document.body.classList.toggle('paused', !trackpad.playing);
   trackpad.x = trackpad.y = 0;
-  // Menus need the pointer back; an off setting never holds it.
+
   if ((!trackpad.level || !trackpad.playing) && document.pointerLockElement) document.exitPointerLock();
 }
 window.addEventListener('pointermove', (event) => {
   if (!trackpad.level || !trackpad.playing || !$('panel').classList.contains('hidden')) return;
   const gain = TRACKPAD_GAIN[trackpad.level];
   trackpad.x += event.movementX * gain;
-  trackpad.y -= event.movementY * gain; // pointer down = stick pulled back
+  trackpad.y -= event.movementY * gain;
   const length = Math.hypot(trackpad.x, trackpad.y);
   if (length > 1) { trackpad.x /= length; trackpad.y /= length; }
 });
-// Clicking the game locks the pointer, so strokes never run into the screen edge.
+
 $('skate-canvas').addEventListener('click', () => {
   if (trackpad.level && trackpad.playing && !document.pointerLockElement) {
     try { $('skate-canvas').requestPointerLock(); } catch {}
@@ -233,12 +205,12 @@ function keyboardPad() {
   const axis = (negative, positive) => (held.has(positive) ? 32767 : 0) - (held.has(negative) ? 32767 : 0);
   const lt = held.has('ShiftLeft') || held.has('ShiftRight') ? 255 : 0;
   const rt = held.has('KeyC') ? 255 : 0;
-  // Arrow keys win while held; otherwise the trackpad drives the right stick.
+
   let rx = axis('ArrowLeft', 'ArrowRight');
   let ry = axis('ArrowDown', 'ArrowUp');
   const [tx, ty] = trackpadStick();
   if (!rx && !ry) { rx = tx; ry = ty; }
-  // The on-screen controller (touch.js) joins in on touch screens.
+
   const touch = touchPad();
   let lx = axis('KeyA', 'KeyD');
   let ly = axis('KeyS', 'KeyW');
@@ -251,22 +223,15 @@ function keyboardPad() {
   ]);
 }
 
-// Open a link from the game (pause menu > ONLINE > Join the Discord). A key
-// press counts as a click for pop-up blockers; a gamepad press does not, so
-// the visible button stays as the fallback.
 function openUrl(url) {
   if (!/^https:\/\//.test(url)) return;
-  // Community/donation links are removed in this offline mirror: the URLs are
-  // baked into the compiled WASM (they cannot be edited out), so they are
-  // dropped here instead of being opened.
+
   if (/discord\.gg|buymeacoffee|pump\.fun|ko-fi|patreon/i.test(url)) return;
   const opened = window.open(url, '_blank');
   if (opened) opened.opener = null;
   else document.body.classList.add('paused');
 }
 
-// A file the player gives the game (a shared skater, .cfss): read here in the
-// page and handed to the engine; it is never uploaded anywhere.
 let picked = null;
 function pickFile(accept) {
   const input = document.createElement('input');
@@ -288,7 +253,6 @@ window.addEventListener('drop', async (event) => {
   picked = new Uint8Array(await file.arrayBuffer());
 });
 
-// Phones and tablets (as the front end decides for Lite mode).
 const SMALL_SCREEN = /iPhone|iPad|iPod|Android|Mobile/.test(navigator.userAgent)
   || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -300,14 +264,12 @@ window.skateHost = {
   takePicked: () => { const file = picked; picked = null; return file; },
   getBootConfig: async () => window.__skateBoot,
   readFile: (path) => store.readFile(path),
-  // Download a world ahead of time. Background ones (every other world) are
-  // skipped on phones and tablets, sparing their data plans and storage.
+
   prefetch: (path, background) => { if (!(background && SMALL_SCREEN)) store.prefetch(path, background); },
   writeFile: (path, data) => { store.writeFile(path, data).catch((e) => console.warn('persist failed', path, e)); },
   progress: (done, total, label) => showProgress(total ? done / total : 0, `${label} (${done}/${total})`),
   stage: showStage,
-  // The engine has copied the startup files into its own memory by now, so the
-  // page's 250 MB copy of them is dead weight for the rest of the session.
+
   ready: () => { store.releaseBootPackage(); revealGame(); installTouchControls(store.readFile); $('skate-canvas').focus(); },
   releaseBoot: () => store.releaseBootPackage(),
   fatal: (message) => fail(message),
@@ -321,9 +283,6 @@ window.skateHost = {
 
 $('load-back').addEventListener('click', () => location.reload());
 
-// Browsers only enter fullscreen from a click, so dropping in is where it
-// happens. Keyboard Lock keeps Esc for the pause menu instead of leaving
-// fullscreen (hold Esc to leave); browsers without it keep their default.
 async function enterFullscreen() {
   if (!frontend.fullscreen || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
   try {
@@ -335,8 +294,7 @@ async function enterFullscreen() {
 }
 
 let started = false;
-// `frontEnd`: start at Skate 3's title and main menu in the engine, with no
-// world loaded yet; the player picks one there.
+
 async function startGame(map, name, frontEnd = false) {
   if (started) return;
   started = true;
@@ -347,25 +305,19 @@ async function startGame(map, name, frontEnd = false) {
   showStage('Checking the server for game data…');
   watchForGame();
   try {
-    // The engine module and the game data are fetched together; the data is one
-    // request, so this wait is the whole download.
-    // The engine's script and wasm carry this page's build (main.js?v=...),
-    // so a cached copy of one can never meet the other from another build.
+
     const module = import(`./pkg/skate3rust.js${BUILD}`);
     const gameData = store.startBootPackage((done, total, label) =>
       showProgress(total ? done / total : 0, `${label} — ${(done / 1048576).toFixed(0)} of ${(total / 1048576).toFixed(0)} MB`))
-      // Resolve to nothing: this handler stays suspended for the whole game,
-      // and holding the file map here would keep the package alive after
-      // the engine releases it.
+
       .then(() => undefined);
-    // Difficulty comes from settings/gameplay.json (chosen on first run and in
-    // the menus); a ?difficulty= link still overrides it for that session.
+
     window.__skateBoot = await store.bootConfig(map, params.get('difficulty'), params.has('capture'), params.get('teleport'), frontEnd);
     await gameData;
     showStage('Loading the engine…');
     await (await module).default({ module_or_path: new URL(`./pkg/skate3rust_bg.wasm${BUILD}`, import.meta.url) });
   } catch (error) {
-    // winit unwinds main with a control-flow exception on web; that is not a failure.
+
     if (error && /Using exceptions for control flow/.test(String(error.message || error))) return;
     started = false;
     fail(error && error.stack ? error.stack : error);
@@ -373,5 +325,5 @@ async function startGame(map, name, frontEnd = false) {
 }
 
 frontend = createFrontend({ store, start: startGame, gpuProblem: webgpuProblem() });
-// The previous client copied the whole install into the browser; reclaim it quietly.
+
 store.discardLegacyCache().catch(() => {});

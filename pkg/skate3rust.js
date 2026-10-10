@@ -2864,117 +2864,117 @@ function __wbg_get_imports() {
             return ret;
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000002: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 165911, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_218311);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000003: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 94771, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_129287);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000004: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("Array<any>"), NamedExternref("ResizeObserver")], shim_idx: 11975, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23634);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000005: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("Array<any>")], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633_4);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000006: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("Event")], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633_5);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000007: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("FocusEvent")], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633_6);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000008: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("KeyboardEvent")], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633_7);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000009: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("PageTransitionEvent")], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633_8);
             return addHeapObject(ret);
         },
         __wbindgen_cast_000000000000000a: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("PointerEvent")], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633_9);
             return addHeapObject(ret);
         },
         __wbindgen_cast_000000000000000b: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [NamedExternref("WheelEvent")], shim_idx: 11966, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23633_10);
             return addHeapObject(ret);
         },
         __wbindgen_cast_000000000000000c: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Option(NamedExternref("Blob"))], shim_idx: 11972, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23632);
             return addHeapObject(ret);
         },
         __wbindgen_cast_000000000000000d: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [], shim_idx: 11979, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_23635);
             return addHeapObject(ret);
         },
         __wbindgen_cast_000000000000000e: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [], shim_idx: 84089, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+
             const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_113842);
             return addHeapObject(ret);
         },
         __wbindgen_cast_000000000000000f: function(arg0) {
-            // Cast intrinsic for `F64 -> Externref`.
+
             const ret = arg0;
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000010: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(Slice(F32)) -> NamedExternref("Float32Array")`.
+
             const ret = getArrayF32FromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000011: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(Slice(I16)) -> NamedExternref("Int16Array")`.
+
             const ret = getArrayI16FromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000012: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(Slice(I32)) -> NamedExternref("Int32Array")`.
+
             const ret = getArrayI32FromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000013: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(Slice(I8)) -> NamedExternref("Int8Array")`.
+
             const ret = getArrayI8FromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000014: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(Slice(U16)) -> NamedExternref("Uint16Array")`.
+
             const ret = getArrayU16FromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000015: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(Slice(U32)) -> NamedExternref("Uint32Array")`.
+
             const ret = getArrayU32FromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000016: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(Slice(U8)) -> NamedExternref("Uint8Array")`.
+
             const ret = getArrayU8FromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000017: function(arg0, arg1) {
-            // Cast intrinsic for `Ref(String) -> Externref`.
+
             const ret = getStringFromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
@@ -3059,96 +3059,65 @@ function __wasm_bindgen_func_elem_23634(arg0, arg1, arg2, arg3) {
     wasm.__wasm_bindgen_func_elem_23634(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
-
 const __wbindgen_enum_GamepadMappingType = ["", "standard"];
-
 
 const __wbindgen_enum_GpuAddressMode = ["clamp-to-edge", "repeat", "mirror-repeat"];
 
-
 const __wbindgen_enum_GpuBlendFactor = ["zero", "one", "src", "one-minus-src", "src-alpha", "one-minus-src-alpha", "dst", "one-minus-dst", "dst-alpha", "one-minus-dst-alpha", "src-alpha-saturated", "constant", "one-minus-constant", "src1", "one-minus-src1", "src1-alpha", "one-minus-src1-alpha"];
-
 
 const __wbindgen_enum_GpuBlendOperation = ["add", "subtract", "reverse-subtract", "min", "max"];
 
-
 const __wbindgen_enum_GpuBufferBindingType = ["uniform", "storage", "read-only-storage"];
-
 
 const __wbindgen_enum_GpuCanvasAlphaMode = ["opaque", "premultiplied"];
 
-
 const __wbindgen_enum_GpuCompareFunction = ["never", "less", "equal", "less-equal", "greater", "not-equal", "greater-equal", "always"];
-
 
 const __wbindgen_enum_GpuCullMode = ["none", "front", "back"];
 
-
 const __wbindgen_enum_GpuErrorFilter = ["validation", "out-of-memory", "internal"];
-
 
 const __wbindgen_enum_GpuFilterMode = ["nearest", "linear"];
 
-
 const __wbindgen_enum_GpuFrontFace = ["ccw", "cw"];
-
 
 const __wbindgen_enum_GpuIndexFormat = ["uint16", "uint32"];
 
-
 const __wbindgen_enum_GpuLoadOp = ["load", "clear"];
-
 
 const __wbindgen_enum_GpuMipmapFilterMode = ["nearest", "linear"];
 
-
 const __wbindgen_enum_GpuPowerPreference = ["low-power", "high-performance"];
-
 
 const __wbindgen_enum_GpuPrimitiveTopology = ["point-list", "line-list", "line-strip", "triangle-list", "triangle-strip"];
 
-
 const __wbindgen_enum_GpuQueryType = ["occlusion", "timestamp"];
-
 
 const __wbindgen_enum_GpuSamplerBindingType = ["filtering", "non-filtering", "comparison"];
 
-
 const __wbindgen_enum_GpuStencilOperation = ["keep", "zero", "replace", "invert", "increment-clamp", "decrement-clamp", "increment-wrap", "decrement-wrap"];
-
 
 const __wbindgen_enum_GpuStorageTextureAccess = ["write-only", "read-only", "read-write"];
 
-
 const __wbindgen_enum_GpuStoreOp = ["store", "discard"];
-
 
 const __wbindgen_enum_GpuTextureAspect = ["all", "stencil-only", "depth-only"];
 
-
 const __wbindgen_enum_GpuTextureDimension = ["1d", "2d", "3d"];
-
 
 const __wbindgen_enum_GpuTextureFormat = ["r8unorm", "r8snorm", "r8uint", "r8sint", "r16uint", "r16sint", "r16float", "rg8unorm", "rg8snorm", "rg8uint", "rg8sint", "r32uint", "r32sint", "r32float", "rg16uint", "rg16sint", "rg16float", "rgba8unorm", "rgba8unorm-srgb", "rgba8snorm", "rgba8uint", "rgba8sint", "bgra8unorm", "bgra8unorm-srgb", "rgb9e5ufloat", "rgb10a2uint", "rgb10a2unorm", "rg11b10ufloat", "rg32uint", "rg32sint", "rg32float", "rgba16uint", "rgba16sint", "rgba16float", "rgba32uint", "rgba32sint", "rgba32float", "stencil8", "depth16unorm", "depth24plus", "depth24plus-stencil8", "depth32float", "depth32float-stencil8", "bc1-rgba-unorm", "bc1-rgba-unorm-srgb", "bc2-rgba-unorm", "bc2-rgba-unorm-srgb", "bc3-rgba-unorm", "bc3-rgba-unorm-srgb", "bc4-r-unorm", "bc4-r-snorm", "bc5-rg-unorm", "bc5-rg-snorm", "bc6h-rgb-ufloat", "bc6h-rgb-float", "bc7-rgba-unorm", "bc7-rgba-unorm-srgb", "etc2-rgb8unorm", "etc2-rgb8unorm-srgb", "etc2-rgb8a1unorm", "etc2-rgb8a1unorm-srgb", "etc2-rgba8unorm", "etc2-rgba8unorm-srgb", "eac-r11unorm", "eac-r11snorm", "eac-rg11unorm", "eac-rg11snorm", "astc-4x4-unorm", "astc-4x4-unorm-srgb", "astc-5x4-unorm", "astc-5x4-unorm-srgb", "astc-5x5-unorm", "astc-5x5-unorm-srgb", "astc-6x5-unorm", "astc-6x5-unorm-srgb", "astc-6x6-unorm", "astc-6x6-unorm-srgb", "astc-8x5-unorm", "astc-8x5-unorm-srgb", "astc-8x6-unorm", "astc-8x6-unorm-srgb", "astc-8x8-unorm", "astc-8x8-unorm-srgb", "astc-10x5-unorm", "astc-10x5-unorm-srgb", "astc-10x6-unorm", "astc-10x6-unorm-srgb", "astc-10x8-unorm", "astc-10x8-unorm-srgb", "astc-10x10-unorm", "astc-10x10-unorm-srgb", "astc-12x10-unorm", "astc-12x10-unorm-srgb", "astc-12x12-unorm", "astc-12x12-unorm-srgb"];
 
-
 const __wbindgen_enum_GpuTextureSampleType = ["float", "unfilterable-float", "depth", "sint", "uint"];
-
 
 const __wbindgen_enum_GpuTextureViewDimension = ["1d", "2d", "2d-array", "cube", "cube-array", "3d"];
 
-
 const __wbindgen_enum_GpuVertexFormat = ["uint8", "uint8x2", "uint8x4", "sint8", "sint8x2", "sint8x4", "unorm8", "unorm8x2", "unorm8x4", "snorm8", "snorm8x2", "snorm8x4", "uint16", "uint16x2", "uint16x4", "sint16", "sint16x2", "sint16x4", "unorm16", "unorm16x2", "unorm16x4", "snorm16", "snorm16x2", "snorm16x4", "float16", "float16x2", "float16x4", "float32", "float32x2", "float32x3", "float32x4", "uint32", "uint32x2", "uint32x3", "uint32x4", "sint32", "sint32x2", "sint32x3", "sint32x4", "unorm10-10-10-2", "unorm8x4-bgra"];
-
 
 const __wbindgen_enum_GpuVertexStepMode = ["vertex", "instance"];
 
-
 const __wbindgen_enum_PremultiplyAlpha = ["none", "premultiply", "default"];
 
-
 const __wbindgen_enum_ResizeObserverBoxOptions = ["border-box", "content-box", "device-pixel-content-box"];
-
 
 const __wbindgen_enum_VisibilityState = ["hidden", "visible"];
 
@@ -3166,7 +3135,7 @@ const CLOSURE_DTORS = (typeof FinalizationRegistry === 'undefined')
     : new FinalizationRegistry(state => wasm.__wbindgen_export5(state.a, state.b));
 
 function debugString(val) {
-    // primitive types
+
     const type = typeof val;
     if (type == 'number' || type == 'boolean' || val == null) {
         return  `${val}`;
@@ -3190,7 +3159,7 @@ function debugString(val) {
             return 'Function';
         }
     }
-    // objects
+
     if (Array.isArray(val)) {
         const length = val.length;
         let debug = '[';
@@ -3203,30 +3172,28 @@ function debugString(val) {
         debug += ']';
         return debug;
     }
-    // Test for built-in
+
     const builtInMatches = /\[object ([^\]]+)\]/.exec(toString.call(val));
     let className;
     if (builtInMatches && builtInMatches.length > 1) {
         className = builtInMatches[1];
     } else {
-        // Failed to match the standard '[object ClassName]'
+
         return toString.call(val);
     }
     if (className == 'Object') {
-        // we're a user defined class or Object
-        // JSON.stringify avoids problems with cycles, and is generally much
-        // easier than looping through ownProperties of `val`.
+
         try {
             return 'Object(' + JSON.stringify(val) + ')';
         } catch (_) {
             return 'Object';
         }
     }
-    // errors
+
     if (val instanceof Error) {
         return `${val.name}: ${val.message}\n${val.stack}`;
     }
-    // TODO we could test for more things here, like `Set`s and `Map`s.
+
     return className;
 }
 
@@ -3375,9 +3342,6 @@ function makeMutClosure(arg0, arg1, f) {
     const state = { a: arg0, b: arg1, cnt: 1 };
     const real = (...args) => {
 
-        // First up with a closure we increment the internal reference
-        // count. This ensures that the Rust closure environment won't
-        // be deallocated while we're invoking it.
         state.cnt++;
         const a = state.a;
         state.a = 0;
@@ -3538,7 +3502,6 @@ async function __wbg_load(module, imports) {
 function initSync(module) {
     if (wasm !== undefined) return wasm;
 
-
     if (module !== undefined) {
         if (Object.getPrototypeOf(module) === Object.prototype) {
             ({module} = module)
@@ -3557,7 +3520,6 @@ function initSync(module) {
 
 async function __wbg_init(module_or_path) {
     if (wasm !== undefined) return wasm;
-
 
     if (module_or_path !== undefined) {
         if (Object.getPrototypeOf(module_or_path) === Object.prototype) {

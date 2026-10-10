@@ -1,39 +1,18 @@
-// Bridge between the engine and the user's own converted game data.
-//
-// The data is served by the same server that serves this page
-// (scripts/serve-web.js), so a file is fetched the moment the engine asks for
-// it and nothing is copied. Copying a 1.4 GB install into browser storage is
-// what used to fail with a quota error, and the bytes are already on disk next
-// door.
-//
-// Browser storage therefore holds only the engine's own small writes (settings,
-// captures), which are read back in preference to the server's copy.
-//
-// Renamed from the previous design's key, where the value was a second server
-// on another port; that value would now point at nothing.
 import { openPack } from './pack.js?v=9798389b2cfa';
 
 const ORIGIN_KEY = 'skate3-source-origin';
-// A game data zip chosen in this browser (ONLINE > Game Server): read directly.
+
 const PACK_KEY = 'skate3-pack-url';
 const isZip = (value) => /\.zip(\?.*)?$/i.test(value);
 const LOCAL_DIR = 'skate3-local';
-// Everything under assets/ and settings/ is read synchronously by the engine,
-// so the host mounts it up front from here; maps are fetched on demand instead.
-// The shared custom-character library's catalog (manifest and preview per
-// model) mounts too; the models themselves download when someone wears one.
+
 const MOUNTED = /^(assets|settings)\/|^userdata\/custom-characters\/entries\/[0-9a-f]{64}\/(manifest\.json|preview\.png)$/;
-// Matches serve-web.js: customiser models and textures load on demand.
-// Game audio (.ogg) streams in the same way: only its sound table mounts.
+
 const LAZY = /^assets\/private\/(customisation\/(?!.*\.json$)|audio\/.*\.ogg$)/;
-// Converted files the engine never reads: the customiser's 33 MB catalog
-// (setup's work list), and the movable-prop and backdrop packages (inputs for
-// features the engine does not load yet). Matches serve-web.js.
+
 const UNUSED = /^assets\/private\/(customisation\/sets\/[^/]+\/catalog\.json|native-props\/|native-backdrops\/)/;
 const mountedPath = (path) => MOUNTED.test(path) && !LAZY.test(path) && !UNUSED.test(path);
-// Only the starting map's sky is mounted (the others are 2 MB each); the
-// engine fetches another world's sky with its map when it travels there. A
-// front-end boot starts with no world and so mounts none.
+
 const otherSky = (path, map, frontEnd = false) => {
   const sky = /^assets\/private\/native-skies\/([^/.]+)\./.exec(path);
   if (sky && frontEnd) return true;
@@ -43,11 +22,9 @@ const otherSky = (path, map, frontEnd = false) => {
 const MAP_FILE = /^maps\/(private\/)?[^/]+\.(skate|irradiance)$/i;
 const NEAREST = ['NotFoundError', 'TypeMismatchError'];
 
-// --- Where the data comes from ----------------------------------------------
-
 export function origin() {
   let saved = (localStorage.getItem(ORIGIN_KEY) || '').trim();
-  // A zip saved as the server by an earlier client is a pack, not a server.
+
   if (isZip(saved)) {
     localStorage.setItem(PACK_KEY, saved);
     localStorage.removeItem(ORIGIN_KEY);
@@ -60,8 +37,7 @@ export function setOrigin(value) {
   const clean = (value || '').trim().replace(/\/+$/, '');
   packState = null;
   cached = null;
-  // A .zip address is game data to read directly; the page keeps using this
-  // server for itself, custom characters and multiplayer.
+
   if (isZip(clean)) {
     localStorage.setItem(PACK_KEY, clean);
     localStorage.removeItem(ORIGIN_KEY);
@@ -74,26 +50,11 @@ export function setOrigin(value) {
 
 let cached = null;
 
-// --- Game data from a published zip (pack) -------------------------------------
-//
-// A server started with --client-pack=<url> tells the page, in /config.json,
-// that the game data is a zip on another host (e.g. Cloudflare R2). The page
-// then reads files straight out of that zip (web/pack.js) and the server only
-// serves the page, custom characters and multiplayer. `?pack=<url>` overrides.
-
 let packState = null;
 
-// --- Saved downloads ---------------------------------------------------------
-//
-// Maps and the startup data are kept in the browser's Cache Storage after the
-// first download, so the next visit loads from disk instead of the network.
-// Cache Storage works where the file-system API is hidden (Brave). Entries are
-// keyed by where the data came from and its version: a replaced pack or a
-// changed file on the server is downloaded again, never mixed with old data.
 const DOWNLOADS = 'skate3-downloads-v1';
 const DOWNLOAD_KEY = `${location.origin}/__skate3-downloads/`;
-// Cache Storage exists only on HTTPS pages; a server reached over plain HTTP
-// keeps its downloads in IndexedDB instead (the same calls, see idbCache).
+
 const cacheApi = () => typeof caches !== 'undefined' && window.isSecureContext;
 const hasDownloads = () => cacheApi() || typeof indexedDB !== 'undefined';
 let persistAsked = false;
@@ -107,8 +68,6 @@ async function downloads() {
   }
 }
 
-// The few Cache calls used here (match, put, keys, delete) over IndexedDB,
-// which stores the bytes as Blobs on disk.
 const IDB_DOWNLOADS = 'skate3-downloads';
 let idbOpen = null;
 function idbCache() {
@@ -154,7 +113,7 @@ async function savedDownload(key) {
 async function saveDownload(key, bytes, headers = {}) {
   const cache = await downloads();
   if (!cache) return;
-  // Ask once to keep saved maps when the browser runs short of space.
+
   if (!persistAsked && navigator.storage && navigator.storage.persist) {
     persistAsked = true;
     navigator.storage.persist().catch(() => {});
@@ -162,12 +121,11 @@ async function saveDownload(key, bytes, headers = {}) {
   try {
     await cache.put(DOWNLOAD_KEY + key, new Response(bytes, { headers: { 'Content-Length': String(bytes.length), ...headers } }));
   } catch (error) {
-    // Out of space: play on, it just downloads again next time.
+
     console.warn('could not save download', key, error && error.name);
   }
 }
 
-// Saved ranges of one pack version; older versions of the same pack go.
 function packStore(url, version) {
   const prefix = `pack/${encodeURIComponent(url)}/`;
   (async () => {
@@ -188,7 +146,6 @@ function packStore(url, version) {
   };
 }
 
-/// Bytes of game data saved in this browser.
 export async function downloadsSize() {
   const cache = await downloads();
   if (!cache) return 0;
@@ -208,12 +165,6 @@ export async function clearDownloads() {
   }
 }
 
-// --- Background downloads ---------------------------------------------------
-//
-// Worlds are fetched before they are asked for: the one picked on the main
-// menu straight away, the rest one at a time while the player skates. Each is
-// only read so that it lands in the saved downloads; the bytes are dropped.
-// A load that asks for a world still on its way waits for that download.
 const prefetching = new Map();
 const prefetchQueue = [];
 let prefetchRunning = false;
@@ -243,8 +194,6 @@ async function runPrefetch() {
   prefetchRunning = false;
 }
 
-// Server mode: maps are saved with the server's ETag, then revalidated, so an
-// unchanged map costs one small request instead of hundreds of megabytes.
 const SAVED_FROM_SERVER = /^maps\//;
 
 async function fromServerSaved(path) {
@@ -262,12 +211,10 @@ async function fromServerSaved(path) {
   return bytes;
 }
 
-// `fallback`: the server also holds the data, so a zip the browser cannot
-// read (its host refuses CORS) just means reading through the server.
 async function packUrl() {
   const forced = new URLSearchParams(location.search).get('pack');
   if (forced) return { url: forced, fallback: false };
-  origin(); // migrates a zip saved as the server
+  origin();
   const chosen = (localStorage.getItem(PACK_KEY) || '').trim();
   if (chosen) return { url: chosen, fallback: false };
   try {
@@ -280,20 +227,11 @@ async function packUrl() {
   }
 }
 
-/// The game-data pack, or null when the game server holds the data itself.
-// Add-on packs published next to the game data, read the same way. The game
-// audio (tools/asset_pipeline/audio.py) is its own zip so the game data zip
-// never has to be rebuilt and re-uploaded for it. A missing add-on is fine.
-// `override` packs replace the game data's copies of their files: the original
-// UI screens (tools/prepare_frontend.py) and the audio are updated more often
-// than the data (older data packs carry an earlier audio conversion).
 const ADD_ONS = [
   { file: 'skate3-audio.zip', marker: 'assets/private/audio/sounds.json', what: 'game audio', override: true },
   { file: 'skate3-ui.zip', marker: 'assets/private/frontend/buttons.json', what: 'original UI screens', override: true },
 ];
 
-// A split pack (make-game-data-pack.js --split): the first zip lists the
-// others, each small enough for the CDN to cache whole. All are required.
 async function packParts(main, url) {
   if (!main.has('assets/private/pack-parts.json')) return [];
   const list = JSON.parse(new TextDecoder().decode(await main.read('assets/private/pack-parts.json')));
@@ -318,9 +256,6 @@ async function addOnPacks(url) {
   return opened;
 }
 
-// One pack as far as the rest of the page is concerned: each file is read
-// from whichever zip holds it, the game data winning any overlap unless the
-// add-on overrides it.
 function combine(main, extras) {
   if (!extras.length) return main;
   const all = [...extras.filter((pack) => pack.override), main, ...extras.filter((pack) => !pack.override)];
@@ -365,8 +300,7 @@ export function gamePack() {
       if (!source) return null;
       const { url } = source;
       try {
-        // Ranges saved for this version of the zip are reused; older versions
-        // of it are cleared out.
+
         const main = await openPack(url, hasDownloads() ? (version) => packStore(url, version) : null);
         return combine(main, [...await packParts(main, url), ...await addOnPacks(url)]);
       } catch (error) {
@@ -392,7 +326,7 @@ export async function manifest(reload = false) {
   if (!response.ok) throw new Error(`No file list at ${base}/manifest.json (HTTP ${response.status}).`);
   let files = await response.json();
   if (!Array.isArray(files)) throw new Error(`${base}/manifest.json is not a list of files.`);
-  // The server lists what it holds (custom characters); the pack, the game.
+
   const pack = await gamePack();
   if (pack) {
     const own = new Set(files.map((file) => file && file.path));
@@ -412,13 +346,6 @@ async function fromOrigin(path) {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-// --- Boot package -----------------------------------------------------------
-//
-// The boot set is a few thousand small files, and asking for them one at a time
-// costs a round trip each. The server hands them over as one response instead:
-// a four-byte header length, the header, then every file back to back, gzipped
-// as a single stream the browser decodes while it arrives. One transfer, one
-// buffer, and a view per file.
 let bundle = null;
 let pending = null;
 let unavailable = false;
@@ -428,11 +355,11 @@ export function startBootPackage(progress) {
   pending = (async () => {
     const pack = await gamePack();
     if (pack) {
-      // Neighbouring files come down as one range: about 45 requests, 100 MB.
+
       const names = pack.list().map((file) => file.path).filter(mountedPath);
       const before = pack.downloaded;
       const files = await pack.readMany(names, (done, total) => {
-        // Saved from an earlier visit unless something actually came down.
+
         if (progress) progress(done, total, pack.downloaded > before ? 'Downloading game data' : 'Loading saved game data');
       });
       bundle = files;
@@ -448,8 +375,7 @@ export function startBootPackage(progress) {
     }
     const response = await fetch(`${origin()}/boot-package`, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    // The server gzips the package and the browser decodes it for us, so the
-    // unpacked length arrives in X-Boot-Bytes rather than Content-Length.
+
     const expected = Number(response.headers.get('X-Boot-Bytes'))
       || Number(response.headers.get('Content-Length')) || 0;
     bundle = await splitBootStream(response.body, (at) => {
@@ -457,7 +383,7 @@ export function startBootPackage(progress) {
     });
     return bundle;
   })().catch((error) => {
-    // An older or static server has no boot package; single requests still work.
+
     unavailable = true;
     console.warn('no boot package, asking for files one at a time:', error.message || error);
     return null;
@@ -467,11 +393,6 @@ export function startBootPackage(progress) {
   return pending;
 }
 
-// A boot package's framing: a 4-byte header length, the JSON header, then
-// every file back to back. Split while it streams in, each file in a buffer
-// of its own: then each can be let go the moment the engine has copied it
-// (readFile), instead of one 220 MB buffer living until the last file is in.
-// That overlap was a few hundred MB of a phone browser's limited memory.
 async function splitBootStream(stream, progress) {
   const reader = stream.getReader();
   const files = new Map();
@@ -486,7 +407,7 @@ async function splitBootStream(stream, progress) {
     let at = 0;
     while (at < chunk.length || (list && index < list.length && list[index].size === 0)) {
       if (!list) {
-        // Length and header: small, so gathered by concatenation.
+
         const joined = new Uint8Array(pending.length + chunk.length - at);
         joined.set(pending);
         joined.set(chunk.subarray(at), pending.length);
@@ -526,10 +447,6 @@ async function splitBootStream(stream, progress) {
   return files;
 }
 
-// Server mode: the boot package kept compressed in saved downloads. The server
-// is asked only whether it changed (its ETag); when it has not, nothing is
-// downloaded. Null when this cannot be used (no Cache Storage, an older server
-// without ?raw=1), and the caller downloads as before.
 async function savedBootPackage(progress) {
   if (!hasDownloads() || typeof DecompressionStream === 'undefined') return null;
   const key = `server/${encodeURIComponent(origin())}/boot-package.gz`;
@@ -565,27 +482,16 @@ async function savedBootPackage(progress) {
   } else {
     return null;
   }
-  // Decompressed as a stream: the caller splits it file by file.
+
   return new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
 }
 
-/// The boot set is fully read into the engine once it has mounted, so drop it.
 export function releaseBootPackage() {
   bundle = null;
 }
 
-// --- Local writes (origin-private file system) ------------------------------
-//
-// Brave hides the file-system APIs, so OPFS is a preference, not a requirement:
-// without it the same writes are kept in memory for the session. Everything the
-// engine reads still comes from the server.
-
 const memory = new Map();
 
-// Settings (graphics, player, gameplay...) are small JSON files the engine
-// reads synchronously at startup, so they must be mounted with the boot set.
-// They are also kept in localStorage: Brave hides OPFS, and without a copy
-// there every saved option would be lost on reload.
 const SETTINGS = /^settings\/[^/]+\.json$/;
 const SETTINGS_KEY = 'skate3-settings:';
 const SETTINGS_LIMIT = 256 * 1024;
@@ -692,9 +598,6 @@ async function localFiles() {
   return out;
 }
 
-// The previous design copied the whole install into the browser. That cache is
-// obsolete now that files are read from the server, and it can be most of a
-// browser's entire storage quota, so drop it on first load of the new client.
 const LEGACY_DIR = 'skate3-install';
 const LEGACY_DB = 'skate3-web';
 
@@ -738,26 +641,21 @@ export async function clearLocal() {
   }
 }
 
-// --- The host API the engine calls ------------------------------------------
-
-/// `null` means the server has no such file.
 export async function readFile(path) {
   const local = await readLocal(path);
   if (local) return local;
   if (pending) await pending;
   const booted = bundle && bundle.get(path);
   if (booted) {
-    // The engine copies each startup file into its own memory as it mounts
-    // it; the page's copy can go now rather than at the end of the load.
+
     bundle.delete(path);
     return booted;
   }
-  // A world still downloading in the background: wait, then read it saved.
+
   if (prefetching.has(path)) await prefetching.get(path);
   return fromOrigin(path);
 }
 
-/// The fixture map the client ships in dist/. Not part of a converted install.
 export const demoMap = 'maps/format-demo.skate';
 
 export async function installSummary() {
@@ -787,22 +685,21 @@ export async function bootConfig(map, difficulty, capture = false, teleport = nu
   const mounted = (file) => file && mountedPath(file.path) && !otherSky(file.path, map, frontEnd);
   return {
     root: 'assets',
-    // Plus settings saved in this browser, which the server does not list.
+
     mount: [...new Set([
       ...files.filter(mounted).map((file) => file.path),
       ...savedSettings(),
     ])],
-    // Files the engine may fetch later (every world, the skies not mounted):
-    // it lists them, and loads one when the player travels there.
+
     declared: files
       .filter((file) => file && (MAP_FILE.test(file.path) || (mountedPath(file.path) && !mounted(file))))
       .map((file) => file.path),
-    // Start at Skate 3's title and main menu rather than in a world.
+
     frontEnd: Boolean(frontEnd),
     map,
     difficulty: difficulty || null,
     capture,
-    // A teleports.json destination id: start at that spot instead of the spawn.
+
     teleport: teleport || null,
   };
 }

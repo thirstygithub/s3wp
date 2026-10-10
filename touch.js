@@ -1,13 +1,3 @@
-// On-screen controller for touch screens: Skate 3's Xbox layout over the game.
-// The left stick steers and crouches, the right pad is the Flick It stick
-// (drag down then up to ollie; it springs back when lifted), and the buttons
-// and triggers sit where a thumb finds them. Everything feeds the same virtual
-// pad as the keyboard (main.js keyboardPad), so the engine sees a controller.
-//
-// Button faces are Skate 3's own Xbox glyphs from the player's converted copy
-// (assets/private/frontend/buttons, see tools/prepare_frontend.py); without
-// them the buttons show their letters.
-
 const XINPUT = { A: 0x1000, B: 0x2000, X: 0x4000, Y: 0x8000, LB: 0x0100, RB: 0x0200, START: 0x0010, BACK: 0x0020 };
 const GLYPHS = 'assets/private/frontend/buttons.json';
 
@@ -15,7 +5,6 @@ export const TOUCH_SCREEN = (navigator.maxTouchPoints || 0) > 0 && matchMedia('(
 
 const state = { buttons: 0, lt: 0, rt: 0, left: [0, 0], right: [0, 0] };
 
-/// The touch controls' share of the virtual pad this frame.
 export function touchPad() {
   return state;
 }
@@ -27,8 +16,6 @@ function el(tag, className, parent) {
   return node;
 }
 
-// A stick: the knob follows the finger within its ring; `spring` returns it
-// to the centre on release (both do; the right one is the flick stick).
 function stick(root, className, target) {
   const base = el('div', `tc-stick ${className}`, root);
   const knob = el('div', 'tc-knob', base);
@@ -38,7 +25,7 @@ function stick(root, className, target) {
     const length = Math.hypot(x, y);
     if (length > 1) { x /= length; y /= length; }
     target[0] = Math.round(x * 32767);
-    target[1] = Math.round(-y * 32767); // screen down = stick pulled back
+    target[1] = Math.round(-y * 32767);
     knob.style.transform = `translate(${x * 42}px, ${y * 42}px)`;
   };
   base.addEventListener('pointerdown', (event) => {
@@ -79,7 +66,6 @@ function button(root, name, className, onDown, onUp) {
   return node;
 }
 
-// Skate 3's glyph art onto the buttons, read from the game data.
 async function paintGlyphs(root, readFile) {
   try {
     const index = JSON.parse(new TextDecoder().decode(await readFile(GLYPHS)));
@@ -101,7 +87,6 @@ async function paintGlyphs(root, readFile) {
   }
 }
 
-/// Build the controls once; CSS shows them only while skating on a touch screen.
 export function installTouchControls(readFile) {
   if (!TOUCH_SCREEN) return;
   document.body.classList.add('touch-screen');
@@ -117,7 +102,7 @@ export function installTouchControls(readFile) {
   }
   button(root, 'LT', 'tc-lt', () => { state.lt = 255; }, () => { state.lt = 0; });
   button(root, 'RT', 'tc-rt', () => { state.rt = 255; }, () => { state.rt = 0; });
-  // Nothing under the controls should scroll or zoom the page.
+
   root.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
   paintGlyphs(root, readFile);
 }

@@ -15,14 +15,13 @@
     --fe-panel: rgba(4, 9, 14, .9);
     --fe-line: rgba(120, 190, 230, .24);
     --fe-font: Futura, 'Futura Std', 'Futura PT', 'Century Gothic', 'Avenir Next', 'Trebuchet MS', sans-serif;
-    /* Film grain, generated so the client ships no image for it. */
+
     --fe-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   html, body { margin: 0; height: 100%; background: #000; color: var(--fe-ink); font: 15px/1.45 system-ui, sans-serif; overflow: hidden; }
   #stage { position: fixed; inset: 0; }
   canvas#skate-canvas { width: 100%; height: 100%; display: block; outline: none; }
 
-  /* The front end: a 1280x720 layout scaled to the window, like the game's UI. */
   #panel { position: fixed; inset: 0; z-index: 2; background: #000; user-select: none; -webkit-user-select: none; }
   #panel.hidden { display: none; }
   .fe-stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: 50% 50%; overflow: hidden; }
@@ -32,7 +31,6 @@
   .fe-fade { animation: fe-fade-in .6s ease-out both; }
   @keyframes fe-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-  /* Menu backdrop: dark Port Carverton blue with grain and a vignette. */
   .fe-backdrop { position: absolute; inset: 0;
     background:
       radial-gradient(120% 90% at 30% 20%, rgba(40, 110, 160, .28), transparent 60%),
@@ -79,7 +77,6 @@
   .fe-button.a { background: #5fd35f; color: #062006; }
   .fe-button.b { background: #ff5a4e; color: #2a0502; }
 
-  /* --- Fan game disclaimer (stands in for the original's boot notices) --- */
   .fe-notice { position: absolute; left: 50%; top: 47%; transform: translate(-50%, -50%); width: 820px; text-align: center; }
   .fe-notice-logo { display: block; width: max-content; margin: 0 auto 26px; }
   .fe-notice-logo .fe-wordmark { font-size: 64px; }
@@ -93,12 +90,11 @@
   .fe-contact a:hover, .fe-contact a:focus-visible { color: var(--fe-accent); outline: none; }
   .fe-notice-press { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; animation: fe-pulse 1.6s ease-in-out infinite; }
 
-  /* --- Title: the skate. 3 start screen --- */
   .fe-title-bg { position: absolute; inset: -40px; overflow: hidden;
     background:
       radial-gradient(60% 45% at 50% 52%, rgba(40, 140, 210, .22), transparent 70%),
       linear-gradient(180deg, #02060a 0%, #061521 55%, #010305 100%); }
-  /* City lights drifting past, like the attract footage behind the logo. */
+
   .fe-title-bg .fe-lights { position: absolute; inset: 0; opacity: .55; filter: blur(14px);
     background:
       radial-gradient(6px 6px at 10% 70%, #ffcf7a, transparent), radial-gradient(9px 9px at 22% 64%, #7fd3ff, transparent),
@@ -108,7 +104,7 @@
     background-size: 640px 100%; animation: fe-drift 38s linear infinite; }
   .fe-title-bg .fe-lights.far { opacity: .3; filter: blur(22px); background-size: 420px 100%; transform: translateY(-60px); animation-duration: 70s; }
   @keyframes fe-drift { from { background-position: 0 0; } to { background-position: -1280px 0; } }
-  /* A concrete horizon: a ramp-lit floor fading into the dark. */
+
   .fe-title-floor { position: absolute; left: -10%; right: -10%; bottom: -40px; height: 300px; transform: perspective(500px) rotateX(62deg); transform-origin: 50% 100%;
     background:
       repeating-linear-gradient(90deg, rgba(120, 190, 230, .10) 0 2px, transparent 2px 120px),
@@ -154,12 +150,8 @@
   .fe-btn { font: 800 14px var(--fe-font); letter-spacing: .06em; text-transform: uppercase; padding: 9px 16px; background: #102a3f; color: #e8f6ff; border: 1px solid #2f6a91; border-radius: 2px; cursor: pointer; }
   .fe-btn:hover { background: #1a4363; }
 
-  /* --- Loading: modelled on skate. 3's loading screens. A big location title
-     over a dark, grainy shot, a tip card, and a spinning board in the corner.
-     Every moving part animates transform/opacity only, so the compositor keeps
-     it alive while the engine's world build has the main thread pinned. --- */
   #loading { position: fixed; inset: 0; z-index: 3; overflow: hidden; background: #000; font-family: var(--fe-font); }
-  /* An ID rule beats the browser's own [hidden] style, so restate it. */
+
   #loading[hidden] { display: none; }
   .ld-shot { position: absolute; inset: -6%;
     background:
@@ -168,7 +160,7 @@
       linear-gradient(160deg, #0b1d2b 0%, #050c13 55%, #000 100%);
     animation: ld-pan 24s ease-in-out infinite alternate; }
   @keyframes ld-pan { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.08) translate(-2%, 1%); } }
-  /* Big diagonal stripes, the skate. 3 menu motif. */
+
   .ld-stripes { position: absolute; inset: -20%; transform: rotate(-14deg); opacity: .06;
     background: repeating-linear-gradient(90deg, #fff 0 60px, transparent 60px 190px); }
   .ld-grain { position: absolute; inset: -100px; background: var(--fe-grain); opacity: .1; mix-blend-mode: overlay; animation: fe-grain 1s steps(6) infinite; }
@@ -220,7 +212,7 @@
   @media (prefers-reduced-motion: reduce) {
     .ld-shot, .ld-grain, .fe-grain, .fe-lights, .fe-title-floor { animation: none !important; }
   }
-  /* On-screen controller (touch.js): only while skating on a touch screen. */
+
   #touch-controls { display: none; position: fixed; inset: 0; z-index: 5; pointer-events: none;
     user-select: none; -webkit-user-select: none; touch-action: none; }
   body.touch-screen.in-game:not(.paused) #touch-controls { display: block; }
@@ -285,7 +277,7 @@
     <div class="ld-spin" aria-hidden="true">
       <span class="ld-spin-word">LOADING</span>
       <svg class="ld-board" viewBox="0 0 64 64">
-        <!-- A deck from above: kicked nose and tail, two trucks, four wheels. -->
+
         <g transform="rotate(-35 32 32)">
           <rect x="24" y="4" width="16" height="56" rx="8" fill="#0d1a24" stroke="#fff" stroke-width="2.5"/>
           <line x1="26" y1="15" x2="38" y2="15" stroke="#3fc1ff" stroke-width="2"/>
@@ -299,7 +291,7 @@
 </div>
 <script src="/skate-shim.js"></script>
 <script>
-// Install the shim, then start the game once its manifest is read.
+
 window.__skateShimReady = window.__skateShim.install({
   manifestUrl: "https://cdn.jsdelivr.net/gh/thirstygithub/s3wp@main/packs-manifest.json",
   cdnBase: "https://cdn.jsdelivr.net/gh/thirstygithub/s3wp@main/parts/",

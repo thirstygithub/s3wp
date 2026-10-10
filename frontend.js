@@ -1,11 +1,3 @@
-// The start screens: a recreation of Skate 3's front end (boot notice, title,
-// first-run difficulty and world choice, and the CrossBar main menu).
-//
-// Every piece of art here (the Port Carverton banner, the category and row
-// icons, the Futura bitmap fonts) is read at run time from the player's own
-// converted copy of the game, served by their server. The client ships none
-// of it; without game data the same screens render in a plain fallback style.
-
 const FE = 'assets/private/frontend/';
 const CORE = `${FE}assets/data/fe/source/screens/main/core_menu/`;
 const ART = {
@@ -15,7 +7,7 @@ const ART = {
   chevron: [`${CORE}0043_50.Texture.rgba`, 16, 16],
   rule: [`${CORE}0042_48.Texture.rgba`, 256, 2],
   glowTile: [`${CORE}0057_83.Texture.rgba`, 64, 64],
-  // Category icons: dim when not chosen, bright when chosen.
+
   catSkate: [`${CORE}0044_54.Texture.rgba`, 32, 32],
   catOnline: [`${CORE}0045_56.Texture.rgba`, 32, 32],
   catLearn: [`${CORE}0047_60.Texture.rgba`, 32, 32],
@@ -24,7 +16,7 @@ const ART = {
   catOnlineOn: [`${CORE}0051_69.Texture.rgba`, 64, 64],
   catLearnOn: [`${CORE}0054_73.Texture.rgba`, 64, 64],
   catOptionsOn: [`${CORE}0055_75.Texture.rgba`, 64, 64],
-  // Row icons.
+
   start: [`${CORE}0016_128.Texture.rgba`, 64, 64],
   world: [`${CORE}0001_100.Texture.rgba`, 64, 64],
   wrench: [`${CORE}0008_112.Texture.rgba`, 64, 64],
@@ -38,8 +30,6 @@ const ART = {
   alert: [`${CORE}0061_92.Texture.rgba`, 64, 64],
 };
 
-// The worlds of Port Carverton, in the order the game presents them. Maps
-// not listed here (mods, custom maps) follow under their file names.
 const WORLDS = {
   University: ['University', 'Port Carverton University: campus plazas, the Observatory dam and the Super-Ultra Mega-Park.'],
   DownTown: ['Downtown', 'The city centre: ledges, stairs, rails and traffic.'],
@@ -59,34 +49,28 @@ const DIFFICULTIES = [
 ];
 
 const CONTACT = 'root@aaddpp.lol';
-// Maps left out of the world list even when the data has them. MegaPark is
-// the Super-Ultra Mega-Park cut out on its own; it spawns outside its geometry,
-// and the full park is part of University (FREESKATE > Teleport in game).
+
 const HIDDEN_WORLDS = /^maps\/(private\/)?MegaPark\.skate$/i;
 const SETUP_KEY = 'skate3-fe-setup';
 const WORLD_KEY = 'skate3-fe-world';
 const FULLSCREEN_KEY = 'skate3-fullscreen';
 const GAMEPLAY = 'settings/gameplay.json';
 const GRAPHICS = 'settings/graphics.json';
-// Lite mode: 'on' or 'off'; unset means not chosen yet (phones are asked).
+
 const LITE_KEY = 'skate3-lite';
-// Phones and tablets: iPadOS reports a Mac, so touch support decides there.
+
 const SMALL_DEVICE = /iPhone|iPad|iPod|Android|Mobile/.test(navigator.userAgent)
   || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-// Graphics that keep a phone's browser within its memory limit (WebKit closes
-// a tab that uses too much). Lowest textures are the big saving; the rest
-// trims GPU memory and work. Every value stays adjustable in GRAPHICS.
+
 const LITE = { texture_quality: 3, shadows: 0, anti_aliasing: 0, scale: 75 };
 const FULL = { texture_quality: SMALL_DEVICE ? 2 : 0, shadows: 2, anti_aliasing: 0, scale: 100 };
-// The three cities: hundreds of MB of map each, too much for some phones even in Lite.
+
 const HEAVY_WORLDS = new Set(['University', 'DownTown', 'Industrial']);
 
 const local = {
   get(key) { try { return localStorage.getItem(key); } catch { return null; } },
   set(key, value) { try { localStorage.setItem(key, value); } catch {} },
 };
-
-// --- Art from the player's own data ------------------------------------------
 
 async function loadTexture(read, [path, width, height]) {
   const bytes = await read(path);
@@ -119,8 +103,6 @@ class BitmapFont {
     return width;
   }
 
-  // Draws `text` in this font's atlas at `scale`, tinted `color`. `pen` lets a
-  // glow layer follow the advances of the face it sits under.
   draw(ctx, text, x, baseline, scale, advances) {
     let pen = x;
     let i = 0;
@@ -150,8 +132,6 @@ function tint(canvas, color) {
   return canvas;
 }
 
-// --- Text: the game's Futura when the data has it, CSS Futura otherwise --------
-
 let heavy = null;
 let glow = null;
 
@@ -166,7 +146,7 @@ function text(content, { size = 18, color = '#e8f6ff', glowColor = null, upper =
     if (glowColor) span.style.textShadow = `0 0 ${size * 0.35}px ${glowColor}, 0 0 ${size * 0.7}px ${glowColor}`;
     return span;
   }
-  // Rendered at twice the layout size so it stays sharp when the stage scales up.
+
   const ratio = 2;
   const scale = (size / heavy.size) * ratio;
   const pad = Math.ceil(size * 0.45 * ratio);
@@ -199,8 +179,6 @@ function text(content, { size = 18, color = '#e8f6ff', glowColor = null, upper =
   return canvas;
 }
 
-// --- The front end -------------------------------------------------------------
-
 export function createFrontend({ store, start, gpuProblem }) {
   const root = document.getElementById('panel');
   root.innerHTML = '';
@@ -214,11 +192,10 @@ export function createFrontend({ store, start, gpuProblem }) {
   let difficulty = 'easy';
   let world = local.get(WORLD_KEY);
   let pendingError = '';
-  // Game data saved in this browser after the first download (see host.js).
+
   let savedBytes = 0;
   const refreshSaved = () => store.downloadsSize().then((bytes) => { savedBytes = bytes; }).catch(() => {});
 
-  // Fit the 1280x720 layout to the window, as the game's own UI does.
   const fit = () => {
     const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
     stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
@@ -226,9 +203,6 @@ export function createFrontend({ store, start, gpuProblem }) {
   window.addEventListener('resize', fit);
   fit();
 
-  // --- the start screen's own ambience (from the converted audio) ---
-  // Browsers only start sound after the player presses something, so it
-  // begins with the first input and fades out when the game starts.
   let titleAudio = null;
   let titleLevel = 0.45;
   const startTitleAudio = () => {
@@ -259,7 +233,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     }, 50);
   }
 
-  // --- input ---
   const handlers = { up() {}, down() {}, left() {}, right() {}, accept() {}, back() {} };
   const visible = () => !root.classList.contains('hidden');
   window.addEventListener('pointerdown', () => { if (visible()) startTitleAudio(); });
@@ -273,7 +246,7 @@ export function createFrontend({ store, start, gpuProblem }) {
     event.preventDefault();
     handlers[action]();
   });
-  // Gamepad: d-pad or left stick to move, A / Start to choose, B to go back.
+
   const held = new Map();
   const poll = () => {
     requestAnimationFrame(poll);
@@ -346,13 +319,11 @@ export function createFrontend({ store, start, gpuProblem }) {
     const link = el('a');
     link.href = `mailto:${CONTACT}`;
     link.textContent = CONTACT;
-    // Opening the mail client must not also advance the screen behind it.
+
     link.addEventListener('click', (event) => event.stopPropagation());
     return link;
   }
 
-  // --- 1. Boot notice: the fan game disclaimer, in the spot where the original
-  // shows its own boot notices. Plain white on black, as those were. ---
   function notice() {
     show(() => {
       stage.append(el('div', 'fe-black'));
@@ -378,10 +349,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     });
   }
 
-  // After the notice the engine takes over: Skate 3's own title, first-run
-  // difficulty, CrossBar main menu and loading screen run inside it
-  // (main_menu.rs). Phones first answer the Lite question, which has to be
-  // settled before any world loads.
   function afterNotice() {
     root.onclick = null;
     if (pendingError) return message('CAN’T START', pendingError, () => { pendingError = ''; notice(); });
@@ -395,7 +362,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     start(null, 'skate. 3', true);
   }
 
-  // The skate. wordmark: Skate 3's Futura atlas maps it to U+00AB.
   function skateMark(size) {
     if (heavy && heavy.chars.get(0xab)?.width > 60) return text('«', { size, color: '#ffffff' });
     const node = el('span', 'fe-wordmark');
@@ -404,7 +370,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     return node;
   }
 
-  // The full title logo: the wordmark with a big outlined 3 beside it.
   function titleLogo() {
     const logo = el('div', 'fe-logo', skateMark(150));
     const three = el('span', 'fe-logo-three');
@@ -413,8 +378,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     return logo;
   }
 
-  // --- 2. Title: the skate. 3 start screen. City lights drift behind the logo
-  // where the original runs its attract footage. ---
   function title() {
     root.onclick = null;
     show(() => {
@@ -423,7 +386,7 @@ export function createFrontend({ store, start, gpuProblem }) {
       stage.append(el('div', 'fe-letterbox top'), el('div', 'fe-letterbox bottom'));
       const box = el('div', 'fe-title');
       box.append(titleLogo());
-      box.append(el('div')); // line break between the logo and its subtitle
+      box.append(el('div'));
       box.append(el('div', 'fe-title-sub', text('RUST ENGINE  ·  FAN GAME', { size: 18, color: '#cfeeff', glowColor: '#2b9bea' })));
       stage.append(box);
       stage.append(el('div', 'fe-press', text('PRESS START', { size: 30, color: '#ffffff', glowColor: '#36b3ff' })));
@@ -446,7 +409,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     });
   }
 
-  // --- 3. First run: difficulty, then world ---
   function chooseDifficulty(firstRun) {
     let index = Math.max(0, DIFFICULTIES.findIndex(([key]) => key === difficulty));
     show(() => {
@@ -487,7 +449,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     });
   }
 
-  // --- Lite mode ---
   const liteOn = () => local.get(LITE_KEY) === 'on';
 
   async function applyLite(on) {
@@ -552,7 +513,7 @@ export function createFrontend({ store, start, gpuProblem }) {
       const [name, base] = WORLDS[stem] || [stem.replaceAll('_', ' '), 'A map from your installation.'];
       const heavy = liteOn() && HEAVY_WORLDS.has(stem);
       const about = heavy ? `${base} Large city: may still be too much for a phone in Lite mode; the parks are safer.` : base;
-      // In Lite the parks come first: they fit a phone comfortably.
+
       const order = (known.includes(stem) ? known.indexOf(stem) : 100) + (heavy ? 1000 : 0);
       return { path, name, about, order };
     }).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
@@ -604,7 +565,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     });
   }
 
-  // --- 4. The CrossBar ---
   function categories() {
     const fullscreen = local.get(FULLSCREEN_KEY) !== 'off';
     const current = worlds().find((w) => w.path === world) || worlds()[0];
@@ -733,7 +693,6 @@ export function createFrontend({ store, start, gpuProblem }) {
     });
   }
 
-  // A text panel in the menu's style.
   function message(heading, body, done) {
     show(() => {
       backdrop();
@@ -832,8 +791,7 @@ export function createFrontend({ store, start, gpuProblem }) {
     await refresh();
     await refreshSaved();
     if (summary.error) {
-      // A pack the browser cannot read is a hosting setting, not a missing
-      // server: say what failed rather than suggesting SERVE.bat.
+
       pendingError ||= /pack/i.test(summary.error)
         ? `${summary.error}\n\nThe game server is fine; the host of the game data zip has to allow this site (CORS) before browsers can read it.`
         : `${serverLine()}\n\n${summary.error}\n\nStart SERVE.bat on the machine that holds your converted copy and open the address it prints, or set the server under ONLINE > Game Server.`;
@@ -842,7 +800,7 @@ export function createFrontend({ store, start, gpuProblem }) {
       const saved = await store.readFile(GAMEPLAY);
       if (saved) difficulty = JSON.parse(new TextDecoder().decode(saved)).difficulty || difficulty;
     } catch {}
-    // The art comes from the same data; give it a moment, never block on it.
+
     await Promise.race([Promise.all([loadArt(), loadTitleAudio()]), new Promise((resolve) => setTimeout(resolve, 6000))]);
     notice();
   }
@@ -850,13 +808,13 @@ export function createFrontend({ store, start, gpuProblem }) {
   begin();
 
   return {
-    // Back to the menu after a failed start, with the reason on screen.
+
     fail(reason, heading = 'SOMETHING WENT WRONG') {
       root.classList.remove('hidden');
       message(heading, String(reason), () => notice());
     },
     get fullscreen() { return local.get(FULLSCREEN_KEY) !== 'off'; },
-    // The loading screen's heading, in the game's font when it is available.
+
     heading(words) { return text(words.toUpperCase(), { size: 84, color: '#ffffff', glowColor: '#2b9bea' }); },
   };
 }

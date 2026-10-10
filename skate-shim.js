@@ -1,27 +1,10 @@
-// Reassembly shim for the skate3 web port.
-//
-// Makes the engine read its data zips from split parts fetched from a CDN
-// (jsDelivr/GitHub) instead of needing a range-serving server.
-//
-//   1. Reads packs-manifest.json: each logical zip -> ordered list of .partNNN
-//      files, plus the true assembled size.
-//   2. Patches window.fetch. When the engine asks for a known zip, the shim
-//      downloads that zip's parts once, concatenates them into a Blob, and
-//      answers every later request (HEAD, GET, ranged GET) from that Blob.
-//
-// Ranges are sliced here rather than handing back a blob: URL: browsers do not
-// reliably apply a Range header to blob: URLs, and pack.js refuses any response
-// that is not a 206 with a Content-Range.
-//
-// It also draws a loading screen, because assembling ~2.3 GB of parts takes a
-// while and the page would otherwise sit on a black screen with no feedback.
 (() => {
   const shim = {
     manifest: null,
     cdnBase: '',
     packPrefix: '/packs/',
-    blobs: new Map(),        // zip name -> assembled Blob
-    assembling: new Map(),   // zip name -> Promise<Blob>
+    blobs: new Map(),
+    assembling: new Map(),
     onProgress: null,
     onDone: null,
     progress: { loaded: 0, total: 0, packsDone: 0, packsTotal: 0, percent: 0 },
@@ -32,9 +15,7 @@
                     fileOrigin = '', onProgress = null, onDone = null }) {
       this.cdnBase = String(cdnBase).replace(/\/+$/, '');
       this.packPrefix = packPrefix;
-      // When the page is a single file, its own origin holds nothing: every
-      // request the game makes against location.origin (config.json,
-      // manifest.json, boot-package, userdata/...) is redirected here instead.
+
       this.fileOrigin = String(fileOrigin).replace(/\/+$/, '');
       this.onProgress = onProgress;
       this.onDone = onDone;
@@ -47,23 +28,13 @@
         this.manifest = await response.json();
 
         const names = Object.keys(this.manifest);
-        // The denominator covers only the files needed at STARTUP. The zips all
-        // qualify: pack.js opens each one (a HEAD) to read its central directory,
-        // and a HEAD forces the whole zip to be assembled here. Entries marked
-        // lazy (the 59 MB WASM engine) do not -- the emscripten glue fetches it
-        // only when the engine actually starts, long after this loader is gone.
-        // Counting it left the bar frozen at 2438952486/2498405560 = 97%.
+
         const eager = names.filter((n) => !this.manifest[n].lazy);
         this.progress.total = eager.reduce((sum, n) => sum + this.manifest[n].size, 0);
         this.progress.packsTotal = eager.length;
         this._emit();
 
         this._patch();
-        console.log(`[skate-shim] ready: ${eager.length} packs, `
-          + `${(this.progress.total / 1e9).toFixed(2)} GB to assemble`
-          + (eager.length < names.length
-            ? ` (+${names.length - eager.length} on demand)`
-            : ''));
         return this;
       } catch (error) {
         this._fail(error);
@@ -71,60 +42,39 @@
       }
     },
 
-    // --- loading screen -----------------------------------------------------
     _makeLoader(background = 'loadbg.jpg') {
-      // No DOM (e.g. a Node test): the loader is cosmetic, so skip it.
+
       if (typeof document === 'undefined') return;
       if (document.getElementById('shim-loader')) return;
       const css = document.createElement('style');
-      // Type matches the game's own UI: index.html defines --fe-font as the
-      // skate. 3 stack (Futura with Century Gothic / Trebuchet fallbacks) and
-      // sets its labels in 800 weight, uppercase, widely letter-spaced. Using
-      // the same stack and treatment keeps this screen looking like part of the
-      // game rather than a generic web overlay.
-      const feFont = `var(--fe-font, Futura, 'Futura Std', 'Futura PT', `
-        + `'Century Gothic', 'Avenir Next', 'Trebuchet MS', sans-serif)`;
-      // The art is small (576x324) and gets blurred, so it is scaled past the
-      // edges: that hides the soft border a blur otherwise leaves behind, and
-      // the upscale stops mattering once it is frosted.
       const bgUrl = String(background).replace(/"/g, '%22');
       css.textContent = `
-        #shim-loader{position:fixed;inset:0;z-index:99999;background:#000;
-          overflow:hidden;display:flex;align-items:center;justify-content:center;
-          font-family:${feFont};color:#fff;}
+        #shim-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;
+          justify-content:center;background:#000;color:#fff;font:12px/1 sans-serif;}
         #shim-loader.hidden{display:none;}
-        #shim-bg{position:absolute;inset:-8%;background-image:url("${bgUrl}");
-          background-size:cover;background-position:center;background-repeat:no-repeat;
-          filter:blur(22px) saturate(1.15) brightness(.85);transform:scale(1.08);}
-        #shim-scrim{position:absolute;inset:0;
-          background:radial-gradient(120% 100% at 50% 45%,rgba(0,0,0,.35),rgba(0,0,0,.72));}
-        #shim-content{position:relative;z-index:1;display:flex;flex-direction:column;
-          align-items:center;}
-        #shim-percent{font-family:${feFont};font-size:11px;font-weight:600;
-          letter-spacing:.16em;line-height:1;font-variant-numeric:tabular-nums;
-          color:#fff;text-shadow:.85px .85px 1px rgba(0,0,0,.45);margin-bottom:12px;}
-        #shim-track{width:min(420px,70vw);height:12px;background:rgba(0,0,0,.55);
-          box-shadow:0 0 0 1px rgba(255,255,255,.12);}
+        #shim-loader::before{content:"";position:absolute;inset:0;
+          background:url("${bgUrl}") center/cover no-repeat;filter:blur(20px);transform:scale(1.1);}
+        #shim-loader::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.55);}
+        #shim-content{position:relative;display:flex;flex-direction:column;align-items:center;}
+        #shim-label{font-size:12px;margin-bottom:6px;}
+        #shim-percent{font-size:12px;margin-bottom:10px;}
+        #shim-track{width:min(420px,70vw);height:10px;background:rgba(255,255,255,.15);}
         #shim-fill{width:0%;height:100%;background:#fff;transition:width .12s linear;}
-        #shim-note{margin-top:12px;font-family:${feFont};font-size:11px;
-          font-weight:600;letter-spacing:.16em;text-transform:uppercase;
-          color:var(--fe-dim,#9db6c6);font-variant-numeric:tabular-nums;
-          text-shadow:.85px .85px 1px rgba(0,0,0,.45);}
+        #shim-note{margin-top:10px;font-size:11px;color:#bbb;}
       `;
       document.head.appendChild(css);
 
       const loader = document.createElement('div');
       loader.id = 'shim-loader';
       loader.innerHTML = `
-        <div id="shim-bg"></div>
-        <div id="shim-scrim"></div>
         <div id="shim-content">
+          <div id="shim-label">loading</div>
           <div id="shim-percent">0%</div>
           <div id="shim-track"><div id="shim-fill"></div></div>
           <div id="shim-note">preparing game data</div>
         </div>
       `;
-      // Attach as soon as <body> exists so nothing paints before it.
+
       const attach = () => {
         if (document.body) document.body.appendChild(loader);
         else document.addEventListener('DOMContentLoaded',
@@ -166,53 +116,34 @@
     },
 
     _finish() {
-      console.log(`[skate-shim] all packs assembled (${this.stats.assembled})`);
       this._hideLoader();
       if (this.onDone) this.onDone(this.progress);
     },
 
-    // --- assembly -----------------------------------------------------------
-    // A request is ours when its final path segment names a managed file, and it
-    // is not one of our own part fetches. Matching on basename alone used to
-    // recurse infinitely (an unsplit file's "part" is itself); excluding cdnBase
-    // fixes that without also excluding the WASM, which lives under /pkg/ rather
-    // than /packs/.
     _zipName(url) {
       if (!this.manifest) return null;
       const raw = String(url).split(/[?#]/)[0];
       let abs = raw;
       try {
         abs = new URL(raw, location.href).href;
-      } catch { /* keep raw */ }
-      // cdnBase may be absolute (the CDN) or a path (a local server), so match
-      // on substring rather than prefix.
+      } catch {  }
+
       if (this.cdnBase && abs.includes(this.cdnBase)) return null;
       const base = abs.split('/').pop();
       return Object.prototype.hasOwnProperty.call(this.manifest, base) ? base : null;
     },
 
-    // jsDelivr answers 403 on the first request for a file it has not cached yet
-    // (it is still pulling it from GitHub), and can rate-limit under the burst of
-    // parallel part fetches this shim makes.
-    //
-    // The trap: that 403 carries `cache-control: public, max-age=60`, so it is
-    // itself cacheable. Retrying with the default/force cache just replays the
-    // cached failure -- measurably, a 3s network 403 becomes a 44ms cached one.
-    // Retries therefore send `cache: 'no-store'`, and the delays are long enough
-    // to outlast jsDelivr's 60s negative entry.
-    async _fetchPart(url, label, attempts = 6) {
+    async _fetchPart(url, attempts = 6) {
       const delays = [0, 500, 1500, 5000, 30000, 65000];
       let last = null;
       for (let attempt = 0; attempt < attempts; attempt++) {
         if (attempt > 0) {
           const wait = delays[Math.min(attempt, delays.length - 1)];
-          console.warn(`[skate-shim] ${label}: retry ${attempt}/${attempts - 1} in ${wait}ms`);
           await new Promise((r) => setTimeout(r, wait));
         }
         let response = null;
         try {
-          // First attempt may come from the HTTP cache (fast reloads); any retry
-          // must bypass it, or it will just re-read the cached 403.
+
           response = await fetch(url, { cache: attempt === 0 ? 'force-cache' : 'no-store' });
         } catch (error) {
           last = new Error(`network error (${error.message})`);
@@ -220,10 +151,7 @@
         }
         if (response.ok) return response;
         last = new Error(`HTTP ${response.status}`);
-        // 403 (still filling its cache), 404 (same, but reported as missing),
-        // 429 and 5xx are all worth another go. A part named in the manifest
-        // must exist, so even a 404 here is a transient CDN state -- observed
-        // live, a part that 404'd served 200 moments later.
+
         const retryable = response.status === 403 || response.status === 404
           || response.status === 429 || response.status >= 500;
         if (!retryable) return response;
@@ -237,21 +165,19 @@
 
       const promise = (async () => {
         const entry = this.manifest[name];
-        // Lazy entries (the WASM engine) are not part of the loader's totals, so
-        // they must not advance them either.
+
         const counted = !entry.lazy;
         const buffers = [];
         for (const part of entry.parts) {
           const url = `${this.cdnBase}/${part}`;
           let response;
           try {
-            response = await this._fetchPart(url, part);
+            response = await this._fetchPart(url);
           } catch (error) {
             throw new Error(`${part}: ${error.message}`);
           }
           if (!response.ok) throw new Error(`${part}: HTTP ${response.status}`);
 
-          // Stream so the progress bar advances smoothly and accurately.
           if (response.body && response.body.getReader) {
             const reader = response.body.getReader();
             const chunks = [];
@@ -286,14 +212,11 @@
         this.blobs.set(name, blob);
         this.stats.assembled++;
         if (counted) this.progress.packsDone++;
-        // Snap to the exact total once everything is in, so the bar can reach
-        // 100% even if a per-part byte count drifted.
+
         if (counted && this.progress.packsDone >= this.progress.packsTotal) {
           this.progress.loaded = this.progress.total;
         }
         this._emit();
-        console.log(`[skate-shim] assembled ${name} `
-          + `(${(blob.size / 1e6).toFixed(1)} MB from ${entry.parts.length} parts)`);
         return blob;
       })();
 
@@ -329,11 +252,9 @@
       const blob = await this._blobFor(name);
       const method = ((init && init.method) || 'GET').toUpperCase();
       const size = blob.size;
-      // The WASM needs application/wasm for streaming compilation; the zips are
-      // opaque. The content type comes from the manifest entry.
+
       const ctype = (this.manifest[name] && this.manifest[name].type) || 'application/zip';
 
-      // pack.js openPack() does a HEAD first to learn the size.
       if (method === 'HEAD') {
         return new Response(null, {
           status: 200,
@@ -359,7 +280,7 @@
 
       let start = range.start ? Number(range.start) : 0;
       let end = range.end ? Number(range.end) : size - 1;
-      if (!range.start) {                       // suffix range: bytes=-N
+      if (!range.start) {
         start = Math.max(0, size - Number(range.end));
         end = size - 1;
       }
@@ -390,9 +311,6 @@
       window.fetch = (input, init) => {
         const url = typeof input === 'string' ? input : (input && input.url) || String(input);
 
-        // 1. A managed zip: answer it from the reassembled Blob. Checked first,
-        //    and against the ORIGINAL url, because the game asks for the pack at
-        //    /packs/... on its own origin.
         const name = this._zipName(url);
         if (name) {
           return this._respond(name, init).catch((error) => {
@@ -402,9 +320,6 @@
           });
         }
 
-        // 2. Single-file mode: the page's own origin serves nothing, so send its
-        //    requests (config.json, manifest.json, boot-package, userdata) to the
-        //    CDN the rest of the game came from.
         if (this.fileOrigin) {
           let target = url;
           try {
@@ -413,10 +328,7 @@
             if (abs.origin === location.origin || isFile) {
               let path;
               if (isFile) {
-                // file:// pathnames are absolute filesystem paths, and the game
-                // may build them either relative to the page or relative to the
-                // drive root (/config.json -> file:///C:/config.json). Strip the
-                // page directory when present, then any leading drive letter.
+
                 const dir = new URL('.', location.href).pathname;
                 path = abs.pathname.startsWith(dir)
                   ? abs.pathname.slice(dir.length)
@@ -425,8 +337,7 @@
               } else {
                 path = abs.pathname.replace(/^\/+/, '');
               }
-              // A file:// page reports its origin as the string "null", so the
-              // game asks for "null/config.json"; drop that bogus segment.
+
               path = path.replace(/^null\//, '');
               if (path === 'boot-package' && abs.search === '?raw=1') {
                 target = `${this.fileOrigin}/boot-package-raw.gz`;
@@ -434,13 +345,12 @@
                 target = `${this.fileOrigin}/${path}${abs.search}`;
               }
             }
-          } catch { /* not a URL we can parse; pass it through */ }
+          } catch {  }
           return originalFetch(target, init);
         }
 
         return originalFetch(input, init);
       };
-      console.log('[skate-shim] fetch patched');
     },
   };
 

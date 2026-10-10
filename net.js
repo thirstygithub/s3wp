@@ -1,11 +1,3 @@
-// The engine's multiplayer link: one WebSocket to the relay in
-// scripts/net-relay.js, served by the same server as this page.
-//
-// The engine polls once per frame, so everything here is a queue. Messages that
-// arrive go to `inbox` (strings for control text, Uint8Array for datagrams);
-// anything sent before the socket opens waits in `outbox`. A closed socket is
-// reported as an ERROR status line, which is what makes the game drop this
-// transport and connect again the next time a session is chosen.
 let socket = null;
 const inbox = [];
 const outbox = [];
@@ -47,7 +39,6 @@ export function close() {
   if (ws) ws.close();
 }
 
-// The engine hands over a view into wasm memory, so copy before queueing.
 function post(message) {
   if (!socket) return false;
   if (socket.readyState === WebSocket.CONNECTING) {
@@ -62,5 +53,5 @@ function post(message) {
 export const send = (frame) => post(frame.slice());
 export const text = (message) => post(String(message));
 export const poll = () => inbox.splice(0);
-/// Bytes the browser has not put on the wire yet; the session backs off on congestion.
+
 export const backlog = () => (socket ? socket.bufferedAmount : 0);
