@@ -47,16 +47,23 @@
         this.manifest = await response.json();
 
         const names = Object.keys(this.manifest);
-        // The denominator is every byte the manifest describes. All packs are
-        // needed at startup: pack.js opens each one (a HEAD) to read its central
-        // directory, and a HEAD forces the whole zip to be assembled here.
-        this.progress.total = names.reduce((sum, n) => sum + this.manifest[n].size, 0);
-        this.progress.packsTotal = names.length;
+        // The denominator covers only the files needed at STARTUP. The zips all
+        // qualify: pack.js opens each one (a HEAD) to read its central directory,
+        // and a HEAD forces the whole zip to be assembled here. Entries marked
+        // lazy (the 59 MB WASM engine) do not -- the emscripten glue fetches it
+        // only when the engine actually starts, long after this loader is gone.
+        // Counting it left the bar frozen at 2438952486/2498405560 = 97%.
+        const eager = names.filter((n) => !this.manifest[n].lazy);
+        this.progress.total = eager.reduce((sum, n) => sum + this.manifest[n].size, 0);
+        this.progress.packsTotal = eager.length;
         this._emit();
 
         this._patch();
-        console.log(`[skate-shim] ready: ${names.length} packs, `
-          + `${(this.progress.total / 1e9).toFixed(2)} GB to assemble`);
+        console.log(`[skate-shim] ready: ${eager.length} packs, `
+          + `${(this.progress.total / 1e9).toFixed(2)} GB to assemble`
+          + (eager.length < names.length
+            ? ` (+${names.length - eager.length} on demand)`
+            : ''));
         return this;
       } catch (error) {
         this._fail(error);
@@ -138,7 +145,7 @@
         if (pct) pct.textContent = p.percent + '%';
         if (note) {
           note.textContent = `${(p.loaded / 1e9).toFixed(2)} / `
-            + `${(p.total / 1e9).toFixed(2)} GB  ·  `
+            + `${(p.total / 1e9).toFixed(2)} GB  Â·  `
             + `${p.packsDone}/${p.packsTotal} packs`;
         }
       }
@@ -227,6 +234,9 @@
 
       const promise = (async () => {
         const entry = this.manifest[name];
+        // Lazy entries (the WASM engine) are not part of the loader's totals, so
+        // they must not advance them either.
+        const counted = !entry.lazy;
         const buffers = [];
         for (const part of entry.parts) {
           const url = `${this.cdnBase}/${part}`;
@@ -246,8 +256,10 @@
               const { done, value } = await reader.read();
               if (done) break;
               chunks.push(value);
-              this.progress.loaded += value.length;
-              this._emit();
+              if (counted) {
+                this.progress.loaded += value.length;
+                this._emit();
+              }
             }
             const joined = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
             let at = 0;
@@ -255,8 +267,10 @@
             buffers.push(joined);
           } else {
             const buf = new Uint8Array(await response.arrayBuffer());
-            this.progress.loaded += buf.length;
-            this._emit();
+            if (counted) {
+              this.progress.loaded += buf.length;
+              this._emit();
+            }
             buffers.push(buf);
           }
         }
@@ -268,10 +282,10 @@
         }
         this.blobs.set(name, blob);
         this.stats.assembled++;
-        this.progress.packsDone++;
+        if (counted) this.progress.packsDone++;
         // Snap to the exact total once everything is in, so the bar can reach
         // 100% even if a per-part byte count drifted.
-        if (this.progress.packsDone >= this.progress.packsTotal) {
+        if (counted && this.progress.packsDone >= this.progress.packsTotal) {
           this.progress.loaded = this.progress.total;
         }
         this._emit();

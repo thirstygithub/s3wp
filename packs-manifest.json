@@ -181,6 +181,7 @@
     "type": "application/zip"
   },
   "skate3rust_bg.wasm": {
+    "lazy": true,
     "parts": [
       "skate3rust_bg.wasm.part001",
       "skate3rust_bg.wasm.part002",
