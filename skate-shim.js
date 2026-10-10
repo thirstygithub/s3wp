@@ -220,9 +220,12 @@
         }
         if (response.ok) return response;
         last = new Error(`HTTP ${response.status}`);
-        // 403/429/5xx are worth another go; a 404 will never succeed.
-        const retryable = response.status === 403 || response.status === 429
-          || response.status >= 500;
+        // 403 (still filling its cache), 404 (same, but reported as missing),
+        // 429 and 5xx are all worth another go. A part named in the manifest
+        // must exist, so even a 404 here is a transient CDN state -- observed
+        // live, a part that 404'd served 200 moments later.
+        const retryable = response.status === 403 || response.status === 404
+          || response.status === 429 || response.status >= 500;
         if (!retryable) return response;
       }
       throw last || new Error('unknown failure');
