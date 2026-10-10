@@ -186,17 +186,27 @@
 
     // jsDelivr answers 403 on the first request for a file it has not cached yet
     // (it is still pulling it from GitHub), and can rate-limit under the burst of
-    // parallel part fetches this shim makes. Without retries a single transient
-    // 403 aborts the whole assembly, so retry those and any 5xx with backoff.
+    // parallel part fetches this shim makes.
+    //
+    // The trap: that 403 carries `cache-control: public, max-age=60`, so it is
+    // itself cacheable. Retrying with the default/force cache just replays the
+    // cached failure -- measurably, a 3s network 403 becomes a 44ms cached one.
+    // Retries therefore send `cache: 'no-store'`, and the delays are long enough
+    // to outlast jsDelivr's 60s negative entry.
     async _fetchPart(url, label, attempts = 6) {
+      const delays = [0, 500, 1500, 5000, 30000, 65000];
       let last = null;
       for (let attempt = 0; attempt < attempts; attempt++) {
         if (attempt > 0) {
-          await new Promise((r) => setTimeout(r, 400 * attempt));
+          const wait = delays[Math.min(attempt, delays.length - 1)];
+          console.warn(`[skate-shim] ${label}: retry ${attempt}/${attempts - 1} in ${wait}ms`);
+          await new Promise((r) => setTimeout(r, wait));
         }
         let response = null;
         try {
-          response = await fetch(url, { cache: 'force-cache' });
+          // First attempt may come from the HTTP cache (fast reloads); any retry
+          // must bypass it, or it will just re-read the cached 403.
+          response = await fetch(url, { cache: attempt === 0 ? 'force-cache' : 'no-store' });
         } catch (error) {
           last = new Error(`network error (${error.message})`);
           continue;
