@@ -165,16 +165,22 @@
     },
 
     // --- assembly -----------------------------------------------------------
-    // A request is ours when it sits under the pack prefix AND its final path
-    // segment names a managed zip. The prefix test is essential: parts live
-    // under a different directory, and for an unsplit zip the part file has the
-    // SAME basename as the zip, so matching on basename alone makes the shim
-    // intercept its own part fetch and recurse until the stack overflows.
+    // A request is ours when its final path segment names a managed file, and it
+    // is not one of our own part fetches. Matching on basename alone used to
+    // recurse infinitely (an unsplit file's "part" is itself); excluding cdnBase
+    // fixes that without also excluding the WASM, which lives under /pkg/ rather
+    // than /packs/.
     _zipName(url) {
       if (!this.manifest) return null;
-      const path = String(url).split(/[?#]/)[0];
-      if (this.packPrefix && !path.includes(this.packPrefix)) return null;
-      const base = path.split('/').pop();
+      const raw = String(url).split(/[?#]/)[0];
+      let abs = raw;
+      try {
+        abs = new URL(raw, location.href).href;
+      } catch { /* keep raw */ }
+      // cdnBase may be absolute (the CDN) or a path (a local server), so match
+      // on substring rather than prefix.
+      if (this.cdnBase && abs.includes(this.cdnBase)) return null;
+      const base = abs.split('/').pop();
       return Object.prototype.hasOwnProperty.call(this.manifest, base) ? base : null;
     },
 
@@ -269,13 +275,16 @@
       const blob = await this._blobFor(name);
       const method = ((init && init.method) || 'GET').toUpperCase();
       const size = blob.size;
+      // The WASM needs application/wasm for streaming compilation; the zips are
+      // opaque. The content type comes from the manifest entry.
+      const ctype = (this.manifest[name] && this.manifest[name].type) || 'application/zip';
 
       // pack.js openPack() does a HEAD first to learn the size.
       if (method === 'HEAD') {
         return new Response(null, {
           status: 200,
           headers: {
-            'Content-Type': 'application/zip',
+            'Content-Type': ctype,
             'Content-Length': String(size),
             'Accept-Ranges': 'bytes',
           },
@@ -287,7 +296,7 @@
         return new Response(blob, {
           status: 200,
           headers: {
-            'Content-Type': 'application/zip',
+            'Content-Type': ctype,
             'Content-Length': String(size),
             'Accept-Ranges': 'bytes',
           },
@@ -314,7 +323,7 @@
       return new Response(slice, {
         status: 206,
         headers: {
-          'Content-Type': 'application/zip',
+          'Content-Type': ctype,
           'Content-Length': String(slice.size),
           'Content-Range': `bytes ${start}-${end}/${size}`,
           'Accept-Ranges': 'bytes',

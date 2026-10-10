@@ -6,7 +6,8 @@
       "skate3-audio.zip.part003",
       "skate3-audio.zip.part004"
     ],
-    "size": 69498353
+    "size": 69498353,
+    "type": "application/zip"
   },
   "skate3-game-data-2.zip": {
     "parts": [
@@ -35,7 +36,8 @@
       "skate3-game-data-2.zip.part023",
       "skate3-game-data-2.zip.part024"
     ],
-    "size": 476347920
+    "size": 476347920,
+    "type": "application/zip"
   },
   "skate3-game-data-3.zip": {
     "parts": [
@@ -63,7 +65,8 @@
       "skate3-game-data-3.zip.part022",
       "skate3-game-data-3.zip.part023"
     ],
-    "size": 440977933
+    "size": 440977933,
+    "type": "application/zip"
   },
   "skate3-game-data-4.zip": {
     "parts": [
@@ -76,7 +79,8 @@
       "skate3-game-data-4.zip.part007",
       "skate3-game-data-4.zip.part008"
     ],
-    "size": 146737228
+    "size": 146737228,
+    "type": "application/zip"
   },
   "skate3-game-data-5.zip": {
     "parts": [
@@ -101,7 +105,8 @@
       "skate3-game-data-5.zip.part019",
       "skate3-game-data-5.zip.part020"
     ],
-    "size": 386658881
+    "size": 386658881,
+    "type": "application/zip"
   },
   "skate3-game-data-6.zip": {
     "parts": [
@@ -122,7 +127,8 @@
       "skate3-game-data-6.zip.part015",
       "skate3-game-data-6.zip.part016"
     ],
-    "size": 303542269
+    "size": 303542269,
+    "type": "application/zip"
   },
   "skate3-game-data-7.zip": {
     "parts": [
@@ -144,7 +150,8 @@
       "skate3-game-data-7.zip.part016",
       "skate3-game-data-7.zip.part017"
     ],
-    "size": 318937012
+    "size": 318937012,
+    "type": "application/zip"
   },
   "skate3-game-data.zip": {
     "parts": [
@@ -163,12 +170,23 @@
       "skate3-game-data.zip.part013",
       "skate3-game-data.zip.part014"
     ],
-    "size": 277572060
+    "size": 277572060,
+    "type": "application/zip"
   },
   "skate3-ui.zip": {
     "parts": [
       "skate3-ui.zip"
     ],
-    "size": 18680830
+    "size": 18680830,
+    "type": "application/zip"
+  },
+  "skate3rust_bg.wasm": {
+    "parts": [
+      "skate3rust_bg.wasm.part001",
+      "skate3rust_bg.wasm.part002",
+      "skate3rust_bg.wasm.part003"
+    ],
+    "size": 59453074,
+    "type": "application/wasm"
   }
 }
