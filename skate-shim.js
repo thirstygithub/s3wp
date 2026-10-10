@@ -145,7 +145,7 @@
         if (pct) pct.textContent = p.percent + '%';
         if (note) {
           note.textContent = `${(p.loaded / 1e9).toFixed(2)} / `
-            + `${(p.total / 1e9).toFixed(2)} GB  Â·  `
+            + `${(p.total / 1e9).toFixed(2)} GB  ·  `
             + `${p.packsDone}/${p.packsTotal} packs`;
         }
       }
