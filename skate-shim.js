@@ -29,9 +29,13 @@
 
     async install({ manifestUrl, cdnBase = '', packPrefix = '/packs/',
                     showLoader = true, background = 'loadbg.jpg',
-                    onProgress = null, onDone = null }) {
+                    fileOrigin = '', onProgress = null, onDone = null }) {
       this.cdnBase = String(cdnBase).replace(/\/+$/, '');
       this.packPrefix = packPrefix;
+      // When the page is a single file, its own origin holds nothing: every
+      // request the game makes against location.origin (config.json,
+      // manifest.json, boot-package, userdata/...) is redirected here instead.
+      this.fileOrigin = String(fileOrigin).replace(/\/+$/, '');
       this.onProgress = onProgress;
       this.onDone = onDone;
 
@@ -322,13 +326,56 @@
       const originalFetch = window.fetch.bind(window);
       window.fetch = (input, init) => {
         const url = typeof input === 'string' ? input : (input && input.url) || String(input);
+
+        // 1. A managed zip: answer it from the reassembled Blob. Checked first,
+        //    and against the ORIGINAL url, because the game asks for the pack at
+        //    /packs/... on its own origin.
         const name = this._zipName(url);
-        if (!name) return originalFetch(input, init);
-        return this._respond(name, init).catch((error) => {
-          this._fail(error);
-          console.error(`[skate-shim] ${name} failed:`, error);
-          throw error;
-        });
+        if (name) {
+          return this._respond(name, init).catch((error) => {
+            this._fail(error);
+            console.error(`[skate-shim] ${name} failed:`, error);
+            throw error;
+          });
+        }
+
+        // 2. Single-file mode: the page's own origin serves nothing, so send its
+        //    requests (config.json, manifest.json, boot-package, userdata) to the
+        //    CDN the rest of the game came from.
+        if (this.fileOrigin) {
+          let target = url;
+          try {
+            const abs = new URL(url, location.href);
+            const isFile = abs.protocol === 'file:';
+            if (abs.origin === location.origin || isFile) {
+              let path;
+              if (isFile) {
+                // file:// pathnames are absolute filesystem paths, and the game
+                // may build them either relative to the page or relative to the
+                // drive root (/config.json -> file:///C:/config.json). Strip the
+                // page directory when present, then any leading drive letter.
+                const dir = new URL('.', location.href).pathname;
+                path = abs.pathname.startsWith(dir)
+                  ? abs.pathname.slice(dir.length)
+                  : abs.pathname;
+                path = path.replace(/^\/+/, '').replace(/^[A-Za-z]:\//, '');
+              } else {
+                path = abs.pathname.replace(/^\/+/, '');
+              }
+              // A file:// page reports its origin as the string "null", so the
+              // game asks for "null/config.json"; drop that bogus segment.
+              path = path.replace(/^null\//, '');
+              if (path === 'boot-package' && abs.search === '?raw=1') {
+                target = `${this.fileOrigin}/boot-package-raw.gz`;
+              } else {
+                target = `${this.fileOrigin}/${path}${abs.search}`;
+              }
+            }
+          } catch { /* not a URL we can parse; pass it through */ }
+          return originalFetch(target, init);
+        }
+
+        return originalFetch(input, init);
       };
       console.log('[skate-shim] fetch patched');
     },
